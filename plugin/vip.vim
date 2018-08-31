@@ -4,8 +4,8 @@ let s:FINISHED = 'finished'
 let s:ACTIVE = 'active'
 let s:DISABLED = 'disabled'
 let s:NULL_HIGHLIGHT = {}
+let s:ZERO_STATE = { 'type': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
 
-let s:STATE = { 'type': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
 " type State
 "   = Unstarted
 "   | Finished
@@ -13,6 +13,26 @@ let s:STATE = { 'type': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
 "   | Disabled highlight
 
 execute printf('hi '.s:MATCH_GROUP.' ctermfg=%s', 240)
+
+function! s:state_for_current_file() abort
+  return s:STATE[s:current_file_name()]
+endfunction
+
+function! s:current_file_highlights() abort
+  return s:FILE_HIGHLIGHTS[s:current_file_name()]
+endfunction
+
+function! s:current_file_name() abort
+  return expand('%')
+endfunction
+
+function! VipRegister(file_highlights) abort
+  let s:STATE = {}
+  for file in keys(a:file_highlights)
+    let s:STATE[file] = s:ZERO_STATE
+  endfor
+  let s:FILE_HIGHLIGHTS = a:file_highlights
+endfunction
 
 function! s:highlight(highlight) abort
   call s:dim_other_lines(a:highlight)
@@ -22,11 +42,12 @@ endfunction
 
 function! s:move_cursor_to_highlight_focus_line(highlight)
   call cursor(a:highlight.cursorLine, 1)
+  normal! ^
 endfunction
 
 function! s:set_state(type, ...) abort
   let highlight = get(a:, 1, s:NULL_HIGHLIGHT)
-  let s:STATE = { 'type': a:type, 'highlight': highlight }
+  let s:STATE[expand('%')] = { 'type': a:type, 'highlight': highlight }
 endfunction
 
 function! s:dim_other_lines(highlight) abort
@@ -45,22 +66,22 @@ function! s:remove_matches() abort
 endfunction
 
 function! s:disable() abort
-  if s:STATE.type != s:UNSTARTED
-    call s:set_state(s:DISABLED, s:STATE.highlight)
+  if s:state_for_current_file().type != s:UNSTARTED
+    call s:set_state(s:DISABLED, s:state_for_current_file().highlight)
   endif
   call s:remove_matches()
 endfunction! abort
 
 function! s:enable() abort
-  call s:highlight(s:STATE.highlight)
+  call s:highlight(s:state_for_current_file().highlight)
 endfunction
 
 function! s:highlight_first() abort
-  call s:highlight(g:vip_ranges[0])
+  call s:highlight(s:current_file_highlights()[0])
 endfunction
 
 function! s:highlight_last() abort
-  call s:highlight(g:vip_ranges[len(g:vip_ranges) - 1])
+  call s:highlight(s:current_file_highlights()[len(s:current_file_highlights()) - 1])
 endfunction
 
 function! s:lines_to_dim_from_ranges(ranges) abort
@@ -89,12 +110,12 @@ function! s:reset_to_unstarted() abort
 endfunction
 
 function! s:vip_next_highlight() abort
-  if s:STATE.type == s:UNSTARTED
+  if s:state_for_current_file().type == s:UNSTARTED
     call s:highlight_first()
-  elseif s:STATE.type == s:FINISHED " no-op
-  elseif s:STATE.type == s:ACTIVE
+  elseif s:state_for_current_file().type == s:FINISHED " no-op
+  elseif s:state_for_current_file().type == s:ACTIVE
     call s:actually_highlight_next()
-  elseif s:STATE.type == s:DISABLED
+  elseif s:state_for_current_file().type == s:DISABLED
     call s:enable()
   else
     throw "Unexpected state type"
@@ -102,12 +123,12 @@ function! s:vip_next_highlight() abort
 endfunction
 
 function! s:vip_previous_highlight() abort
-  if s:STATE.type == s:UNSTARTED " no-op
-  elseif s:STATE.type == s:FINISHED
+  if s:state_for_current_file().type == s:UNSTARTED " no-op
+  elseif s:state_for_current_file().type == s:FINISHED
     call s:highlight_last()
-  elseif s:STATE.type == s:ACTIVE
+  elseif s:state_for_current_file().type == s:ACTIVE
     call s:actually_highlight_previous()
-  elseif s:STATE.type == s:DISABLED
+  elseif s:state_for_current_file().type == s:DISABLED
     call s:enable()
   else
     throw "Unexpected state type"
@@ -115,20 +136,20 @@ function! s:vip_previous_highlight() abort
 endfunction
 
 function! s:actually_highlight_previous() abort
-  let index = index(g:vip_ranges, s:STATE.highlight)
+  let index = index(s:current_file_highlights(), s:state_for_current_file().highlight)
   if index == 0
     call s:reset_to_unstarted()
   else
     if index > 0
-      call s:highlight(g:vip_ranges[index - 1])
+      call s:highlight(s:current_file_highlights()[index - 1])
     endif
   endif
 endfunction
 
 function! s:actually_highlight_next() abort
-  let index = index(g:vip_ranges, s:STATE.highlight)
-  if index + 1 < len(g:vip_ranges)
-    call s:highlight(g:vip_ranges[index + 1])
+  let index = index(s:current_file_highlights(), s:state_for_current_file().highlight)
+  if index + 1 < len(s:current_file_highlights())
+    call s:highlight(s:current_file_highlights()[index + 1])
   else
     call s:finish_highlights()
   endif
