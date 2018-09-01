@@ -3,6 +3,7 @@ let s:UNSTARTED = 'unstarted'
 let s:FINISHED = 'finished'
 let s:ACTIVE = 'active'
 let s:DISABLED = 'disabled'
+let s:DIMMED = 'dimmed'
 let s:NULL_HIGHLIGHT = {}
 let s:ZERO_STATE = { 'type': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
 
@@ -15,11 +16,27 @@ let s:ZERO_STATE = { 'type': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
 execute printf('hi '.s:MATCH_GROUP.' ctermfg=%s', 240)
 
 function! s:state_for_current_file() abort
-  return s:STATE[s:current_file_name()]
+  if s:in_highlightable_file()
+    return s:STATE[s:current_file_name()]
+  else
+    return s:ZERO_STATE
+  endif
 endfunction
 
 function! s:current_file_highlights() abort
   return s:FILE_HIGHLIGHTS[s:current_file_name()]
+endfunction
+
+function! s:dim_whole_buffer()
+  call s:dim_other_lines({ 'ranges': [] })
+endfunction
+
+function! s:undim()
+  if s:state_for_current_file().type == s:ACTIVE
+    call s:highlight(s:STATE[s:current_file_name()].highlight)
+  else
+    call s:remove_matches()
+  endif
 endfunction
 
 function! s:current_file_name() abort
@@ -32,6 +49,14 @@ function! VipRegister(file_highlights) abort
     let s:STATE[file] = s:ZERO_STATE
   endfor
   let s:FILE_HIGHLIGHTS = a:file_highlights
+endfunction
+
+function! s:vip_enable_dim_on_leave() abort
+  augroup Vip
+    autocmd!
+    autocmd WinEnter,BufEnter * VipUndim
+    autocmd WinLeave,BufLeave * VipDim
+  augroup END
 endfunction
 
 function! s:highlight(highlight) abort
@@ -109,29 +134,37 @@ function! s:reset_to_unstarted() abort
   call s:set_state(s:UNSTARTED)
 endfunction
 
+function! s:in_highlightable_file() abort
+  return has_key(s:STATE, s:current_file_name())
+endfunction
+
 function! s:vip_next_highlight() abort
-  if s:state_for_current_file().type == s:UNSTARTED
-    call s:highlight_first()
-  elseif s:state_for_current_file().type == s:FINISHED " no-op
-  elseif s:state_for_current_file().type == s:ACTIVE
-    call s:actually_highlight_next()
-  elseif s:state_for_current_file().type == s:DISABLED
-    call s:enable()
-  else
-    throw "Unexpected state type"
+  if s:in_highlightable_file()
+    if s:state_for_current_file().type == s:UNSTARTED
+      call s:highlight_first()
+    elseif s:state_for_current_file().type == s:FINISHED " no-op
+    elseif s:state_for_current_file().type == s:ACTIVE
+      call s:actually_highlight_next()
+    elseif s:state_for_current_file().type == s:DISABLED
+      call s:enable()
+    else
+      throw "Unexpected state type"
+    endif
   endif
 endfunction
 
 function! s:vip_previous_highlight() abort
-  if s:state_for_current_file().type == s:UNSTARTED " no-op
-  elseif s:state_for_current_file().type == s:FINISHED
-    call s:highlight_last()
-  elseif s:state_for_current_file().type == s:ACTIVE
-    call s:actually_highlight_previous()
-  elseif s:state_for_current_file().type == s:DISABLED
-    call s:enable()
-  else
-    throw "Unexpected state type"
+  if s:in_highlightable_file()
+    if s:state_for_current_file().type == s:UNSTARTED " no-op
+    elseif s:state_for_current_file().type == s:FINISHED
+      call s:highlight_last()
+    elseif s:state_for_current_file().type == s:ACTIVE
+      call s:actually_highlight_previous()
+    elseif s:state_for_current_file().type == s:DISABLED
+      call s:enable()
+    else
+      throw "Unexpected state type"
+    endif
   endif
 endfunction
 
@@ -155,6 +188,9 @@ function! s:actually_highlight_next() abort
   endif
 endfunction
 
+command! VipDim call s:dim_whole_buffer()
+command! VipUndim call s:undim()
 command! VipOff call s:disable()
+command! VipEnableDimOnLeave call s:vip_enable_dim_on_leave()
 command! VipNextHighlight call s:vip_next_highlight()
 command! VipPreviousHighlight call s:vip_previous_highlight()
