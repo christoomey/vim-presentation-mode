@@ -6,6 +6,9 @@ let s:DISABLED = 'disabled'
 let s:DIMMED = 'dimmed'
 let s:NULL_HIGHLIGHT = {}
 let s:ZERO_STATE = { 'type': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
+let s:STATE = {}
+let s:CURRENT_FILE = s:UNSTARTED
+let s:FILE_LIST = []
 
 " type State
 "   = Unstarted
@@ -43,12 +46,37 @@ function! s:current_file_name() abort
   return expand('%')
 endfunction
 
-function! VipRegister(file_highlights) abort
-  let s:STATE = {}
-  for file in keys(a:file_highlights)
+function! VipRegister(configuration) abort
+  for file in keys(a:configuration.highlights)
     let s:STATE[file] = s:ZERO_STATE
   endfor
-  let s:FILE_HIGHLIGHTS = a:file_highlights
+  let s:FILE_HIGHLIGHTS = a:configuration.highlights
+  let s:FILE_LIST = a:configuration.file_list
+endfunction
+
+function! s:open_next_file() abort
+  if s:can_go_to_next_file()
+    let next_open_command = s:next_open_command()
+    execute next_open_command
+    let s:CURRENT_FILE = next_open_command
+  endif
+endfunction
+
+function! s:can_go_to_next_file() abort
+  return !empty(s:FILE_LIST) && s:next_open_command() != s:FINISHED
+endfunction
+
+function! s:next_open_command() abort
+  if s:CURRENT_FILE == s:UNSTARTED
+    return s:FILE_LIST[0]
+  else
+    let index = index(s:FILE_LIST, s:CURRENT_FILE)
+    if index + 1 != len(s:FILE_LIST)
+      return s:FILE_LIST[index + 1]
+    else
+      return s:FINISHED
+    endif
+  endif
 endfunction
 
 function! s:vip_enable_dim_on_leave() abort
@@ -67,7 +95,7 @@ endfunction
 
 function! s:move_cursor_to_highlight_focus_line(highlight)
   call cursor(a:highlight.cursorLine, 1)
-  normal! ^
+  normal! ^zz
 endfunction
 
 function! s:set_state(type, ...) abort
@@ -191,6 +219,7 @@ endfunction
 command! VipDim call s:dim_whole_buffer()
 command! VipUndim call s:undim()
 command! VipOff call s:disable()
+command! VipOpenNextFile call s:open_next_file()
 command! VipEnableDimOnLeave call s:vip_enable_dim_on_leave()
 command! VipNextHighlight call s:vip_next_highlight()
 command! VipPreviousHighlight call s:vip_previous_highlight()
