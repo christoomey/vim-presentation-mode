@@ -54,6 +54,29 @@ function! VipRegister(configuration) abort
   execute printf('hi '.s:MATCH_GROUP.' ctermfg=%s', s:HIGHLIGHT_COLOR)
 endfunction
 
+function! VipStatusline() abort
+  if s:in_highlightable_file()
+    let current = s:highlight_number_for_current_file()
+    return "[vip: " . current . "/" . len(s:current_file_highlights()) . "]"
+  else
+    return ""
+  endif
+endfunction
+
+function! s:highlight_number_for_current_file() abort
+  let state = s:state_for_current_file().type
+  if state == s:UNSTARTED
+    return "-"
+  elseif state == s:FINISHED
+    return "="
+  else
+    return index(
+          \ s:current_file_highlights(),
+          \ s:state_for_current_file().highlight
+          \ ) + 1
+  endif
+endfunction
+
 function! s:open_next_file() abort
   if s:can_go_to_next_file()
     let next_open_command = s:next_open_command()
