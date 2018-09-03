@@ -9,14 +9,13 @@ let s:ZERO_STATE = { 'type': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
 let s:STATE = {}
 let s:CURRENT_FILE = s:UNSTARTED
 let s:FILE_LIST = []
+let s:HIGHLIGHT_COLOR = get(g:, 'vip_highlight_color', 240)
 
 " type State
 "   = Unstarted
 "   | Finished
 "   | Active highlight
 "   | Disabled highlight
-
-execute printf('hi '.s:MATCH_GROUP.' ctermfg=%s', 240)
 
 function! s:state_for_current_file() abort
   if s:in_highlightable_file()
@@ -52,6 +51,7 @@ function! VipRegister(configuration) abort
   endfor
   let s:FILE_HIGHLIGHTS = a:configuration.highlights
   let s:FILE_LIST = a:configuration.file_list
+  execute printf('hi '.s:MATCH_GROUP.' ctermfg=%s', s:HIGHLIGHT_COLOR)
 endfunction
 
 function! s:open_next_file() abort
