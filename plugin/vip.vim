@@ -80,29 +80,22 @@ endfunction
 function! s:open_next_file() abort
   if s:can_go_to_next_file()
     let [state, index, next_open_command] = s:next_open_state()
-    echom "Running ". next_open_command ." with index[". index."]"
     execute next_open_command
     let s:CURRENT_FILE_STATE = { 'state': state, 'index': index }
   endif
 endfunction
 
 function! s:can_go_to_next_file() abort
-  let [next_state, _, _] = s:next_open_state()
-  return !empty(s:FILE_LIST) && next_state != s:FINISHED
+  return !empty(s:FILE_LIST) && s:CURRENT_FILE_STATE.state != s:FINISHED
 endfunction
 
 function! s:next_open_state() abort
-  echom "Running s:next_open_state with: ". s:CURRENT_FILE_STATE.state
   if s:CURRENT_FILE_STATE.state == s:UNSTARTED
     return [s:ACTIVE, 0, s:FILE_LIST[0]]
   else
     let next_index = s:CURRENT_FILE_STATE.index + 1
-    echom "In the actual next index bit. Next index: ".next_index
-    if next_index == len(s:FILE_LIST)
-      return [s:FINISHED, next_index, s:FILE_LIST[next_index]]
-    else
-      return [s:ACTIVE, next_index, s:FILE_LIST[next_index]]
-    endif
+    let next_state = (next_index == len(s:FILE_LIST) - 1) ? s:FINISHED : s:ACTIVE
+    return [next_state, next_index, s:FILE_LIST[next_index]]
   endif
 endfunction
 
