@@ -5,9 +5,9 @@ let s:ACTIVE = 'active'
 let s:DISABLED = 'disabled'
 let s:DIMMED = 'dimmed'
 let s:NULL_HIGHLIGHT = {}
-let s:ZERO_STATE = { 'type': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
+let s:ZERO_STATE = { 'state': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
 let s:STATE = {}
-let s:CURRENT_FILE = s:UNSTARTED
+let s:CURRENT_FILE_STATE = { 'state': s:UNSTARTED, 'index': -1 }
 let s:FILE_LIST = []
 let s:HIGHLIGHT_COLOR = get(g:, 'vip_highlight_color', 240)
 
@@ -34,7 +34,7 @@ function! s:dim_whole_buffer()
 endfunction
 
 function! s:undim()
-  if s:state_for_current_file().type == s:ACTIVE
+  if s:state_for_current_file().state == s:ACTIVE
     call s:highlight(s:STATE[s:current_file_name()].highlight)
   else
     call s:remove_matches()
@@ -64,7 +64,7 @@ function! VipStatusline() abort
 endfunction
 
 function! s:highlight_number_for_current_file() abort
-  let state = s:state_for_current_file().type
+  let state = s:state_for_current_file().state
   if state == s:UNSTARTED
     return "-"
   elseif state == s:FINISHED
@@ -79,25 +79,29 @@ endfunction
 
 function! s:open_next_file() abort
   if s:can_go_to_next_file()
-    let next_open_command = s:next_open_command()
+    let [state, index, next_open_command] = s:next_open_state()
+    echom "Running ". next_open_command ." with index[". index."]"
     execute next_open_command
-    let s:CURRENT_FILE = next_open_command
+    let s:CURRENT_FILE_STATE = { 'state': state, 'index': index }
   endif
 endfunction
 
 function! s:can_go_to_next_file() abort
-  return !empty(s:FILE_LIST) && s:next_open_command() != s:FINISHED
+  let [next_state, _, _] = s:next_open_state()
+  return !empty(s:FILE_LIST) && next_state != s:FINISHED
 endfunction
 
-function! s:next_open_command() abort
-  if s:CURRENT_FILE == s:UNSTARTED
-    return s:FILE_LIST[0]
+function! s:next_open_state() abort
+  echom "Running s:next_open_state with: ". s:CURRENT_FILE_STATE.state
+  if s:CURRENT_FILE_STATE.state == s:UNSTARTED
+    return [s:ACTIVE, 0, s:FILE_LIST[0]]
   else
-    let index = index(s:FILE_LIST, s:CURRENT_FILE)
-    if index + 1 != len(s:FILE_LIST)
-      return s:FILE_LIST[index + 1]
+    let next_index = s:CURRENT_FILE_STATE.index + 1
+    echom "In the actual next index bit. Next index: ".next_index
+    if next_index == len(s:FILE_LIST)
+      return [s:FINISHED, next_index, s:FILE_LIST[next_index]]
     else
-      return s:FINISHED
+      return [s:ACTIVE, next_index, s:FILE_LIST[next_index]]
     endif
   endif
 endfunction
@@ -121,9 +125,9 @@ function! s:move_cursor_to_highlight_focus_line(highlight)
   normal! ^zz
 endfunction
 
-function! s:set_state(type, ...) abort
+function! s:set_state(state, ...) abort
   let highlight = get(a:, 1, s:NULL_HIGHLIGHT)
-  let s:STATE[expand('%')] = { 'type': a:type, 'highlight': highlight }
+  let s:STATE[expand('%')] = { 'state': a:state, 'highlight': highlight }
 endfunction
 
 function! s:dim_other_lines(highlight) abort
@@ -142,7 +146,7 @@ function! s:remove_matches() abort
 endfunction
 
 function! s:disable() abort
-  if s:state_for_current_file().type != s:UNSTARTED
+  if s:state_for_current_file().state != s:UNSTARTED
     call s:set_state(s:DISABLED, s:state_for_current_file().highlight)
   endif
   call s:remove_matches()
@@ -191,12 +195,12 @@ endfunction
 
 function! s:vip_next_highlight() abort
   if s:in_highlightable_file()
-    if s:state_for_current_file().type == s:UNSTARTED
+    if s:state_for_current_file().state == s:UNSTARTED
       call s:highlight_first()
-    elseif s:state_for_current_file().type == s:FINISHED " no-op
-    elseif s:state_for_current_file().type == s:ACTIVE
+    elseif s:state_for_current_file().state == s:FINISHED " no-op
+    elseif s:state_for_current_file().state == s:ACTIVE
       call s:actually_highlight_next()
-    elseif s:state_for_current_file().type == s:DISABLED
+    elseif s:state_for_current_file().state == s:DISABLED
       call s:enable()
     else
       throw "Unexpected state type"
@@ -206,12 +210,12 @@ endfunction
 
 function! s:vip_previous_highlight() abort
   if s:in_highlightable_file()
-    if s:state_for_current_file().type == s:UNSTARTED " no-op
-    elseif s:state_for_current_file().type == s:FINISHED
+    if s:state_for_current_file().state == s:UNSTARTED " no-op
+    elseif s:state_for_current_file().state == s:FINISHED
       call s:highlight_last()
-    elseif s:state_for_current_file().type == s:ACTIVE
+    elseif s:state_for_current_file().state == s:ACTIVE
       call s:actually_highlight_previous()
-    elseif s:state_for_current_file().type == s:DISABLED
+    elseif s:state_for_current_file().state == s:DISABLED
       call s:enable()
     else
       throw "Unexpected state type"
