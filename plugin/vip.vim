@@ -115,7 +115,7 @@ endfunction
 
 function! s:move_cursor_to_highlight_focus_line(highlight)
   call cursor(a:highlight.cursorLine, 1)
-  normal! ^zz
+  normal! ^zt
 endfunction
 
 function! s:set_state(state, ...) abort
