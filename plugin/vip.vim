@@ -236,6 +236,22 @@ function! s:actually_highlight_next() abort
   endif
 endfunction
 
+function! s:ActivateWindowByName(name)
+  let bufid = bufnr(a:name)
+  let winids = win_findbuf(l:bufid)
+  if !empty(winids)
+    call win_gotoid(winids[0])
+  else
+    execute "edit ".a:name
+  endif
+endfunction
+
+function! s:Only(file) abort
+  call s:ActivateWindowByName(a:file)
+  silent! only
+endfunction
+
+command! -nargs=1 -complete=file Only call s:Only(<q-args>)
 command! VipDim call s:dim_whole_buffer()
 command! VipUndim call s:undim()
 command! VipOff call s:disable()
