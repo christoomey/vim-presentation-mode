@@ -251,7 +251,7 @@ function! s:Only(file) abort
   silent! only
 endfunction
 
-command! -nargs=1 -complete=file Only call s:Only(<q-args>)
+command! -bar -nargs=1 -complete=file Only call s:Only(<q-args>)
 command! VipDim call s:dim_whole_buffer()
 command! VipUndim call s:undim()
 command! VipOff call s:disable()
