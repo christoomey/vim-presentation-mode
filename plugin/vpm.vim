@@ -1,4 +1,4 @@
-let s:MATCH_GROUP = 'Vip'
+let s:MATCH_GROUP = 'Vpm'
 let s:UNSTARTED = 'unstarted'
 let s:FINISHED = 'finished'
 let s:ACTIVE = 'active'
@@ -9,7 +9,7 @@ let s:ZERO_STATE = { 'state': s:UNSTARTED, 'highlight': s:NULL_HIGHLIGHT }
 let s:STATE = {}
 let s:CURRENT_FILE_STATE = { 'state': s:UNSTARTED, 'index': -1 }
 let s:FILE_LIST = []
-let s:HIGHLIGHT_COLOR = get(g:, 'vip_highlight_color', 240)
+let s:HIGHLIGHT_COLOR = get(g:, 'vpm_highlight_color', 240)
 
 " type State
 "   = Unstarted
@@ -45,7 +45,7 @@ function! s:current_file_name() abort
   return expand('%')
 endfunction
 
-function! VipRegister(configuration) abort
+function! VpmRegister(configuration) abort
   for file in keys(a:configuration.highlights)
     let s:STATE[file] = s:ZERO_STATE
   endfor
@@ -54,10 +54,10 @@ function! VipRegister(configuration) abort
   execute printf('hi '.s:MATCH_GROUP.' ctermfg=%s', s:HIGHLIGHT_COLOR)
 endfunction
 
-function! VipStatusline() abort
+function! VpmStatusline() abort
   if s:in_highlightable_file()
     let current = s:highlight_number_for_current_file()
-    return "[vip: " . current . "/" . len(s:current_file_highlights()) . "]"
+    return "[vpm: " . current . "/" . len(s:current_file_highlights()) . "]"
   else
     return ""
   endif
@@ -99,11 +99,11 @@ function! s:next_open_state() abort
   endif
 endfunction
 
-function! s:vip_enable_dim_on_leave() abort
-  augroup Vip
+function! s:vpm_enable_dim_on_leave() abort
+  augroup Vpm
     autocmd!
-    autocmd WinEnter,BufEnter * VipUndim
-    autocmd WinLeave,BufLeave * VipDim
+    autocmd WinEnter,BufEnter * VpmUndim
+    autocmd WinLeave,BufLeave * VpmDim
   augroup END
 endfunction
 
@@ -186,7 +186,7 @@ function! s:in_highlightable_file() abort
   return has_key(s:STATE, s:current_file_name())
 endfunction
 
-function! s:vip_next_highlight() abort
+function! s:vpm_next_highlight() abort
   if s:in_highlightable_file()
     if s:state_for_current_file().state == s:UNSTARTED
       call s:highlight_first()
@@ -201,7 +201,7 @@ function! s:vip_next_highlight() abort
   endif
 endfunction
 
-function! s:vip_previous_highlight() abort
+function! s:vpm_previous_highlight() abort
   if s:in_highlightable_file()
     if s:state_for_current_file().state == s:UNSTARTED " no-op
     elseif s:state_for_current_file().state == s:FINISHED
@@ -252,10 +252,10 @@ function! s:Only(file) abort
 endfunction
 
 command! -bar -nargs=1 -complete=file Only call s:Only(<q-args>)
-command! VipDim call s:dim_whole_buffer()
-command! VipUndim call s:undim()
-command! VipOff call s:disable()
-command! VipOpenNextFile call s:open_next_file()
-command! VipEnableDimOnLeave call s:vip_enable_dim_on_leave()
-command! VipNextHighlight call s:vip_next_highlight()
-command! VipPreviousHighlight call s:vip_previous_highlight()
+command! VpmDim call s:dim_whole_buffer()
+command! VpmUndim call s:undim()
+command! VpmOff call s:disable()
+command! VpmOpenNextFile call s:open_next_file()
+command! VpmEnableDimOnLeave call s:vpm_enable_dim_on_leave()
+command! VpmNextHighlight call s:vpm_next_highlight()
+command! VpmPreviousHighlight call s:vpm_previous_highlight()
