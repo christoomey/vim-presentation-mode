@@ -107,14 +107,14 @@ call VpmRegister(
       \   },
       \ })
 
-nnoremap <Down> :VipOff<cr>
-nnoremap <Right> :VipNextHighlight<cr>
-nnoremap <CR> :VipNextHighlight<cr>
-nnoremap <Left> :VipPreviousHighlight<cr>
-nnoremap <Tab> :VipOpenNextFile<cr>
+nnoremap <Down> :VpmOff<cr>
+nnoremap <Right> :VpmNextHighlight<cr>
+nnoremap <CR> :VpmNextHighlight<cr>
+nnoremap <Left> :VpmPreviousHighlight<cr>
+nnoremap <Tab> :VpmOpenNextFile<cr>
 
-nnoremap <PageDown> :VipNextHighlight<cr>
-nnoremap <PageUp> :VipOpenNextFile<cr>
+nnoremap <PageDown> :VpmNextHighlight<cr>
+nnoremap <PageUp> :VpmOpenNextFile<cr>
 
 VipEnableDimOnLeave
 ```
