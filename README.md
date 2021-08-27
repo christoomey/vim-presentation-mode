@@ -16,15 +16,8 @@ gave](https://github.com/christoomey/boston-react-conf-2018-graphql-talk):
 ``` vim
 call VpmRegister(
       \ {
-      \   'files': [
-      \     {
-      \       'files': 'edit src/index.js',
-      \       'highlights': [
-      \         { 'ranges': [[8, 17]], 'cursorLine': 8 },
-      \         { 'ranges': [[19, 29]], 'cursorLine': 19 },
-      \         { 'ranges': [[20, 20], [28, 28]], 'cursorLine': 20 },
-      \       ],
-      \     },
+      \   'file_list': [
+      \     'edit src/index.js',
       \     'edit src/components/UserList.js',
       \     'vsplit src/components/UserTile.js',
       \     'Only src/pages/UserPage.js',
@@ -116,5 +109,5 @@ nnoremap <Tab> :VpmOpenNextFile<cr>
 nnoremap <PageDown> :VpmNextHighlight<cr>
 nnoremap <PageUp> :VpmOpenNextFile<cr>
 
-VipEnableDimOnLeave
+VpmEnableDimOnLeave
 ```
