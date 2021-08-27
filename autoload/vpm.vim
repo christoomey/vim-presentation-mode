@@ -54,6 +54,10 @@ function! vpm#vpm_register(configuration) abort
   execute printf('hi '.s:MATCH_GROUP.' ctermfg=%s', s:HIGHLIGHT_COLOR)
 endfunction
 
+function! vpm#register_config(path) abort
+  call vpm#vpm_register(json_decode(system('yq eval . -o=json ' . a:path)))
+endfunction
+
 function! vpm#vpm_statusline() abort
   if vpm#in_highlightable_file()
     let current = vpm#highlight_number_for_current_file()
