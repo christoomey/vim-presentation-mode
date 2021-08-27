@@ -16,7 +16,7 @@ gave](https://github.com/christoomey/boston-react-conf-2018-graphql-talk):
 ``` vim
 call VpmRegister(
       \ {
-      \   'files': [
+      \   'file_list': [
       \     {
       \       'files': 'edit src/index.js',
       \       'highlights': [
@@ -116,5 +116,5 @@ nnoremap <Tab> :VpmOpenNextFile<cr>
 nnoremap <PageDown> :VpmNextHighlight<cr>
 nnoremap <PageUp> :VpmOpenNextFile<cr>
 
-VipEnableDimOnLeave
+VpmEnableDimOnLeave
 ```
